@@ -32,14 +32,17 @@ full_data=[train,test]
     # Had a cabin or not
 train["HadCabin"]=train["Cabin"].apply(lambda x:0 if type(x)==float else 1) 
 test["HadCabin"]=test["Cabin"].apply(lambda x:0 if type(x)==float else 1)
+    
     # Total number of family member
 train["FamilySize"]=train["SibSp"]+train["Parch"]
 test["FamilySize"]=test["SibSp"]+test["Parch"]
+    
     # Alone passengers
 train["IsAlone"]=0
 train.loc[train["FamilySize"]==1,"IsAlone"]=1
 test["IsAlone"]=0
 test.loc[test["FamilySize"]==1,"IsAlone"]=1
+    
     # Null/NaN Data Clearance
 train["Embarked"]=train["Embarked"].fillna("S")
 test["Embarked"]=test["Embarked"].fillna("S")
@@ -52,8 +55,28 @@ for i in full_data:
     age_random=np.random.randint(age_avg-age_std,age_avg+age_std,size=age_null_count)
     i.loc[np.isnan(i["Age"]),"Age"]=age_random
     i["Age"]=i["Age"].astype(int)
+    
+    # Remove Title from Name
+def get_title(Name):
+    search=re.search(' ([A-Za-z]+)\.',Name)
+    if search:
+        return search.group(1)
+    return("")
+    
+    # Title Revision
+for i in full_data:
+    i["Title"]=i["Name"].apply(get_title)
+for i in full_data:
+    i["Title"]=i["Title"].replace(['Countess','Capt', 'Col','Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona','Lady'],'Other')
+    i["Title"]=i["Title"].replace(['Mlle','Ms'],'Miss')
+    i["Title"]=i["Title"].replace('Mme','Mrs')
+    i["Title"]=i["Title"].replace('Sir','Mr')
+# a,count=np.unique(train["Title"],return_counts=True)    
+# print(a,count)
 
-
-print(train["Embarked"].head(10))
-print(train["Fare"].tail(10))
-print(train["Age"].isnull().sum())
+    # Mapping
+for i in full_data:
+    i["Sex"]=i["Sex"].map({"female":0,"male":1}).astype(int)
+    i["Title"]=i["Title"].map({"Mr":1,"Master":2,"Mrs":3,"Ms":4,"Other":5})
+    i["Title"]=i["Title"].fillna(0)
+    i["Title"]=i["Title"].astype(int)
