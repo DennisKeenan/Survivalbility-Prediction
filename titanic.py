@@ -80,3 +80,15 @@ for i in full_data:
     i["Title"]=i["Title"].map({"Mr":1,"Master":2,"Mrs":3,"Ms":4,"Other":5})
     i["Title"]=i["Title"].fillna(0)
     i["Title"]=i["Title"].astype(int)
+
+    # Gini Impurity
+def get_GI(survive,total):
+    survival_rate=survive/total
+    GI=2*(survival_rate*(1-survival_rate))
+    return GI
+# print(get_GI(342,549))
+
+
+for i in full_data: 
+    a,count=np.unique(test["Survived"],return_counts=True)    
+    print(a,count)
