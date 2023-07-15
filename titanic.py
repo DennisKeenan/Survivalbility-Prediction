@@ -75,11 +75,27 @@ for i in full_data:
 # print(a,count)
 
     # Mapping
+unused_column=["PassengerId","Name","Ticket","Cabin","SibSp"]
 for i in full_data:
     i["Sex"]=i["Sex"].map({"female":0,"male":1}).astype(int)
-    i["Title"]=i["Title"].map({"Mr":1,"Master":2,"Mrs":3,"Ms":4,"Other":5})
+    i["Title"]=i["Title"].map({"Mr":1,"Master":2,"Mrs":3,"Miss":4,"Other":5})
     i["Title"]=i["Title"].fillna(0)
     i["Title"]=i["Title"].astype(int)
+    i["Embarked"]=i["Embarked"].map({"C":1,"S":2,"Q":3}).astype(int)
+    i.loc[i["Fare"]<7.91,"Fare"]=0
+    i.loc[(i["Fare"]>7.91) & (i["Fare"]<14.454),"Fare"]=1
+    i.loc[(i["Fare"]>14.454) & (i["Fare"]<31),"Fare"]=2
+    i.loc[i["Fare"]>31,"Fare"]=4
+    i["Fare"]=i["Fare"].astype(int)
+    i.loc[i["Age"]<16,"Age"]=0
+    i.loc[(i["Age"]>16) & (i["Age"]<32),"Age"]=1
+    i.loc[(i["Age"]>32) & (i["Age"]<48),"Age"]=2
+    i.loc[(i["Age"]>48) & (i["Age"]<64),"Age"]=3
+    i.loc[i["Age"]>64,"Age"]=4
+    i["Age"]=i["Age"].astype(int)
+train=train.drop(unused_column,axis=1)
+test=test.drop(unused_column,axis=1)
+    # print(i)
 
     # Gini Impurity
 def get_GI(survive,total):
@@ -88,7 +104,19 @@ def get_GI(survive,total):
     return GI
 # print(get_GI(342,549))
 
+    # Graphs
+color_map=mp.cm.viridis
+mp.figure(figsize=(12,12))
+mp.title("Correlation of features",y=1.05,size=15)
+sb.heatmap(train.astype(float).corr(),linewidths=0.1,vmax=1.0,square=True,cmap=color_map,linecolor="White",annot=True)
+# mp.show()
 
-for i in full_data: 
-    a,count=np.unique(test["Survived"],return_counts=True)    
-    print(a,count)
+    # Correlation
+print(train[["Title","Survived"]].groupby(["Title"],as_index=False).agg(["mean","count","sum"]))
+print(train[["Sex","Survived"]].groupby(["Sex"],as_index=False).agg(["mean","count","sum"]))
+print(train[["HadCabin","Survived"]].groupby(["HadCabin"],as_index=False).agg(["mean","count","sum"]))
+print(train[["Pclass","Survived"]].groupby(["Pclass"],as_index=False).agg(["mean","count","sum"]))
+
+    # Cross Validation
+CV=KFold(n_splits=10)
+accuracy=list()
