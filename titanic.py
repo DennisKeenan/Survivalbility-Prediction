@@ -7,7 +7,7 @@ from sklearn import tree
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
-from IPython.display import Image as img
+from IPython.display import Image as PImage
 from subprocess import check_call
 from PIL import Image,ImageDraw,ImageFont
 
@@ -120,3 +120,39 @@ print(train[["Pclass","Survived"]].groupby(["Pclass"],as_index=False).agg(["mean
     # Cross Validation
 CV=KFold(n_splits=10)
 accuracy=list()
+max_attribute=len(list(test))
+depth_range=range(1,max_attribute+1)
+for i in depth_range:
+    F_accuracy=[]
+    tree_model=tree.DecisionTreeClassifier(max_depth=i)
+    for train_fold,valid in CV.split(train):
+        F_train=train.loc[train_fold]
+        F_valid=train.loc[valid]
+        model=tree_model.fit(X=F_train.drop(["Survived"],axis=1),y=F_train["Survived"])
+        valid_acc=model.score(X=F_valid.drop(["Survived"],axis=1),y=F_valid["Survived"])
+        F_accuracy.append(valid_acc)
+    avg=sum(F_accuracy)/len(F_accuracy)
+    accuracy.append(avg)
+df=pd.DataFrame({"max_depth":depth_range,"average_acc":accuracy})
+df=df[["max_depth","average_acc"]]
+# print(df.to_string(index=False))
+
+    # Tree Model
+y_train=train["Survived"]
+x_train=train.drop(["Survived"],axis=1).values
+x_test=test.values
+dectree=tree.DecisionTreeClassifier(max_depth=4)
+dectree.fit(x_train,y_train)
+y_predict=dectree.predict(x_test)
+result=pd.DataFrame({"PassengerId":test_id,"Survived":y_predict})
+result.to_csv("Result.csv",index=False)
+with open("tree.dot","w") as f:
+    f=tree.export_graphviz(dectree,out_file=f,max_depth=4,impurity=True,feature_names=list(train.drop(["Survived"],axis=1)),
+                           class_names=["Died","Survived"],rounded=True,filled=True) 
+check_call(["dot","-Tpng","tree.dot","-o","tree.png"])
+img=Image.open("tree.png")
+draw=ImageDraw.Draw(img)
+font=ImageFont.truetype("Lato-Regular.ttf")
+draw.text((10,0),'"Title <= 1.5" corresponds to "Mr." title',(0,0,255),font=font)
+img.save("out.png")
+PImage("out.png")
